@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("WAREHOUSE_STAFF")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  sku           String   @unique
+  name          String
+  category      String
+  unitOfMeasure String   @default("units")
+  reorderRule   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  inventoryLevels InventoryLevel[]
+  movements       Movement[]
+}
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  levels      InventoryLevel[]
+  movementsTo Movement[]       @relation("MovementsTo")
+  movementsFr Movement[]       @relation("MovementsFrom")
+}
+
+model InventoryLevel {
+  id          String   @id @default(uuid())
+  productId   String
+  locationId  String
+  quantity    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  product     Product  @relation(fields: [productId], references: [id])
+  location    Location @relation(fields: [locationId], references: [id])
+  @@unique([productId, locationId])
+}
+
+model Operation {
+  id          String     @id @default(uuid())
+  type        String
+  status      String     @default("DRAFT")
+  reference   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  movements   Movement[]
+}
+
+model Movement {
+  id             String    @id @default(uuid())
+  operationId    String
+  productId      String
+  fromLocationId String?
+  toLocationId   String?
+  quantity       Int
+  status         String    @default("DRAFT")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  operation      Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  product        Product   @relation(fields: [productId], references: [id])
+  fromLocation   Location? @relation("MovementsFrom", fields: [fromLocationId], references: [id])
+  toLocation     Location? @relation("MovementsTo", fields: [toLocationId], references: [id])
+}
