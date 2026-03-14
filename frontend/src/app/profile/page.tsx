@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiRequest, getToken } from "@/lib/api";
 
 type UserProfile = {
@@ -11,20 +12,21 @@ type UserProfile = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setError("You are not logged in.");
+      router.replace('/auth');
       return;
     }
 
     apiRequest<UserProfile>("/auth/me", { token })
       .then(setUser)
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load profile"));
-  }, []);
+  }, [router]);
 
   return (
     <section className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiRequest, getToken } from "@/lib/api";
 
 type MoveRow = {
@@ -22,6 +23,7 @@ type MoveResponse = {
 };
 
 export default function MovesPage() {
+  const router = useRouter();
   const [moves, setMoves] = useState<MoveRow[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -30,7 +32,7 @@ export default function MovesPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setError("Please login first.");
+      router.replace('/auth');
       return;
     }
 
@@ -41,7 +43,7 @@ export default function MovesPage() {
     apiRequest<MoveResponse>(`/moves?${query.toString()}`, { token })
       .then((response) => setMoves(response.data))
       .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Failed to load moves"));
-  }, [search, status]);
+  }, [search, status, router]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest, getToken } from "@/lib/api";
 
 type Warehouse = {
@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const [warehouseForm, setWarehouseForm] = useState({ name: "", shortCode: "", address: "" });
   const [locationForm, setLocationForm] = useState({ name: "", shortCode: "", warehouseId: "" });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setError("Please login first.");
@@ -62,11 +62,14 @@ export default function SettingsPage() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load settings data");
     }
-  };
+  }, [productFilter, locationForm.warehouseId]);
 
   useEffect(() => {
-    load();
-  }, [productFilter]);
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const createWarehouse = async (event: FormEvent) => {
     event.preventDefault();

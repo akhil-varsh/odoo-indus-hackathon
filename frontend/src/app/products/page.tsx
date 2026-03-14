@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { apiRequest, getToken } from '@/lib/api';
 
 type Product = {
@@ -32,7 +32,7 @@ export default function ProductsPage() {
     initialLocationId: '',
   });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setError('Please login first.');
@@ -52,11 +52,14 @@ export default function ProductsPage() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load products');
     }
-  };
+  }, [search, form.initialLocationId]);
 
   useEffect(() => {
-    load();
-  }, [search]);
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const onCreate = async (event: FormEvent) => {
     event.preventDefault();

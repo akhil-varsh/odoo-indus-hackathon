@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest, getToken } from "@/lib/api";
 
 type Receipt = {
@@ -44,7 +44,7 @@ export default function ReceiptsPage() {
     quantity: 1,
   });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setError("Please login first.");
@@ -75,11 +75,14 @@ export default function ReceiptsPage() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load receipts");
     }
-  };
+  }, [search, status, form.productId, form.toLocationId]);
 
   useEffect(() => {
-    load();
-  }, [search, status]);
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const createReceipt = async (event: FormEvent) => {
     event.preventDefault();

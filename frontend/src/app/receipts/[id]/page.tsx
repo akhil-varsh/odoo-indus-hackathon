@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiRequest, getToken } from "@/lib/api";
 
 type ReceiptDetail = {
@@ -22,7 +22,7 @@ export default function ReceiptDetailPage() {
   const [receipt, setReceipt] = useState<ReceiptDetail | null>(null);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) return;
 
@@ -32,13 +32,16 @@ export default function ReceiptDetailPage() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load receipt");
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     if (params.id) {
-      load();
+      const timer = setTimeout(() => {
+        void load();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [params.id]);
+  }, [params.id, load]);
 
   const changeStatus = async (action: "validate" | "cancel") => {
     const token = getToken();

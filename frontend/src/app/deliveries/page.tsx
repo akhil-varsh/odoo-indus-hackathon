@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest, getToken } from "@/lib/api";
 
 type Delivery = {
@@ -44,7 +44,7 @@ export default function DeliveriesPage() {
     demandQty: 1,
   });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setError("Please login first.");
@@ -75,11 +75,14 @@ export default function DeliveriesPage() {
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load deliveries");
     }
-  };
+  }, [search, status, form.productId, form.fromLocationId]);
 
   useEffect(() => {
-    load();
-  }, [search, status]);
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const createDelivery = async (event: FormEvent) => {
     event.preventDefault();

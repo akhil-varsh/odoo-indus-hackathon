@@ -16,11 +16,11 @@ type Profile = {
 };
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Operations", href: "/operations" },
-  { label: "About", href: "/about" },
-  { label: "Move History", href: "/moves" },
-  { label: "Settings", href: "/settings" },
+  { label: "Dashboard", href: "/dashboard", managerOnly: false },
+  { label: "Operations", href: "/operations", managerOnly: false },
+  { label: "About", href: "/about", managerOnly: false },
+  { label: "Move History", href: "/moves", managerOnly: true },
+  { label: "Settings", href: "/settings", managerOnly: true },
 ];
 
 export default function TopNav() {
@@ -28,6 +28,7 @@ export default function TopNav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const isManager = profile?.role === "ADMIN" || profile?.role === "INVENTORY_MANAGER";
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,7 +61,9 @@ export default function TopNav() {
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
       <nav className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => (item.managerOnly ? isManager : true))
+            .map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
@@ -75,7 +78,7 @@ export default function TopNav() {
                 {item.label}
               </Link>
             );
-          })}
+            })}
         </div>
 
         <div className="relative" ref={menuRef}>

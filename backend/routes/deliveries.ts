@@ -181,10 +181,77 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { reference, customer, notes, status } = req.body;
-    const updated = await prisma.operation.update({
+    const { reference, customer, notes, status, fromLocationId, lines } = req.body as {
+      reference?: string;
+      customer?: string;
+      notes?: string;
+      status?: OperationStatus;
+      fromLocationId?: string;
+      lines?: Array<{
+        productId: string;
+        demandQty?: number;
+        quantity?: number;
+        unitPrice?: number;
+      }>;
+    };
+
+    if (status && !Object.values(OperationStatus).includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    if (lines && (!Array.isArray(lines) || lines.length === 0)) {
+      return res.status(400).json({ error: 'lines must be a non-empty array when provided' });
+    }
+
+    if (lines && !fromLocationId) {
+      return res.status(400).json({ error: 'fromLocationId is required when updating lines' });
+    }
+
+    const existing = await prisma.operation.findFirst({
+      where: { id: req.params.id, type: OperationType.DELIVERY },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Delivery not found' });
+    }
+
+    const customerLocation = lines ? await ensureCustomerLocation() : null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.operation.update({
+        where: { id: req.params.id },
+        data: {
+          reference,
+          customer,
+          notes,
+          status,
+        },
+      });
+
+      if (lines && customerLocation) {
+        await tx.movement.deleteMany({ where: { operationId: req.params.id } });
+
+        await tx.movement.createMany({
+          data: lines.map((line) => ({
+            operationId: req.params.id,
+            productId: line.productId,
+            quantity: Number(line.demandQty || line.quantity || 0),
+            fromLocationId,
+            toLocationId: customerLocation.id,
+            status: status || existing.status,
+            unitPrice: line.unitPrice,
+          })),
+        });
+      }
+    });
+
+    const updated = await prisma.operation.findUnique({
       where: { id: req.params.id },
-      data: { reference, customer, notes, status },
+      include: {
+        movements: {
+          include: { product: true, fromLocation: true, toLocation: true },
+        },
+      },
     });
 
     return res.json(updated);
