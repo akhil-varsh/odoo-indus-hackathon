@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Sidebar from '../components/layout/Sidebar';
+import AppShell from '../components/layout/AppShell';
 
 export const metadata: Metadata = {
   title: 'CoreInventory',
@@ -14,11 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+      <body>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

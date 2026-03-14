@@ -3,8 +3,36 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  INVENTORY_MANAGER
+  WAREHOUSE_STAFF
+}
+
+enum LocationType {
+  INTERNAL
+  VENDOR
+  CUSTOMER
+  VIRTUAL_ADJUSTMENT
+}
+
+enum OperationType {
+  RECEIPT
+  DELIVERY
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum OperationStatus {
+  DRAFT
+  WAITING
+  READY
+  DONE
+  CANCELED
 }
 
 model User {
@@ -12,9 +40,11 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      String   @default("WAREHOUSE_STAFF")
+  role      Role     @default(WAREHOUSE_STAFF)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  resetOtps  PasswordResetOtp[]
 }
 
 model Product {
@@ -23,22 +53,42 @@ model Product {
   name          String
   category      String
   unitOfMeasure String   @default("units")
+  perUnitCost   Float    @default(0)
   reorderRule   Int      @default(0)
+  isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
   inventoryLevels InventoryLevel[]
   movements       Movement[]
+}
+
+model Warehouse {
+  id        String   @id @default(uuid())
+  name      String
+  shortCode String   @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  locations Location[]
 }
 
 model Location {
   id          String   @id @default(uuid())
   name        String
-  type        String
+  shortCode   String?
+  type        LocationType
+  warehouseId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   levels      InventoryLevel[]
   movementsTo Movement[]       @relation("MovementsTo")
   movementsFr Movement[]       @relation("MovementsFrom")
+
+  @@unique([name, type])
 }
 
 model InventoryLevel {
@@ -46,19 +96,27 @@ model InventoryLevel {
   productId   String
   locationId  String
   quantity    Int      @default(0)
+  reserved    Int      @default(0)
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
   product     Product  @relation(fields: [productId], references: [id])
   location    Location @relation(fields: [locationId], references: [id])
+
   @@unique([productId, locationId])
 }
 
 model Operation {
-  id          String     @id @default(uuid())
-  type        String
-  status      String     @default("DRAFT")
+  id          String          @id @default(uuid())
+  type        OperationType
+  status      OperationStatus @default(DRAFT)
   reference   String?
+  supplier    String?
+  customer    String?
+  notes       String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
   movements   Movement[]
 }
 
@@ -69,11 +127,27 @@ model Movement {
   fromLocationId String?
   toLocationId   String?
   quantity       Int
-  status         String    @default("DRAFT")
+  unitPrice      Float?
+  status         OperationStatus @default(DRAFT)
+  remarks        String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
   operation      Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
   product        Product   @relation(fields: [productId], references: [id])
   fromLocation   Location? @relation("MovementsFrom", fields: [fromLocationId], references: [id])
   toLocation     Location? @relation("MovementsTo", fields: [toLocationId], references: [id])
+}
+
+model PasswordResetOtp {
+  id        String   @id @default(uuid())
+  userId    String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, otp])
 }

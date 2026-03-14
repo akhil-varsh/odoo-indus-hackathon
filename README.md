@@ -1,17 +1,29 @@
-# React + Vite
+# CoreInventory
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CoreInventory is an Inventory Management System with:
+- Frontend: Next.js + Tailwind + shadcn/ui
+- Backend: Node.js + Express + Prisma
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- frontend: Next.js application
+- backend: Node.js API server
+- prisma: Prisma assets kept in root (intact)
 
-## React Compiler
+## Run Frontend
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Open terminal in frontend
+2. Install deps: npm install
+3. Start dev server: npm run dev
 
-## Expanding the ESLint configuration
+## Run Backend
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-"# odoo-indus-hackathon" 
+1. Open terminal in backend
+2. Install deps: npm install
+3. Start dev server: npm run dev
+
+## Notes
+
+- Environment files are ignored via .gitignore.
+- Python/Vite leftovers were removed to keep the repository focused on Next.js + Node.
+- Prisma files were preserved as requested.
